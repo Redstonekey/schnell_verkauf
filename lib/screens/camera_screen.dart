@@ -143,7 +143,7 @@ class _CameraScreenState extends State<CameraScreen> {
     if (_controller == null || !_controller!.value.isInitialized) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Schnell Verkauf'),
+          title: const Text('Schnell Verkaufen'),
           backgroundColor: Colors.orange,
         ),
         body: const Center(

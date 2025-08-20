@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Schnell Verkauf'),
+  title: const Text('Schnell Verkaufen'),
         backgroundColor: Colors.orange,
         centerTitle: true,
         actions: [
@@ -180,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
             
             // Title
             const Text(
-              'Schnell Verkauf',
+              'Schnell Verkaufen',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,

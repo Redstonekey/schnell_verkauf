@@ -7,8 +7,8 @@ plugins {
 
 android {
     namespace = "de.joancode.schnell_verkauf"
-    // Explicitly set compileSdk to 36 to satisfy camera & gallery plugins
-    compileSdk = 36
+    // Use latest stable compileSdk (adjust when 36 becomes stable)
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -21,21 +21,47 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "de.joancode.schnell_verkauf"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "de.joancode.schnell_verkauf" // Ensure you control this reverse domain before first release
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 34 // Explicit target for Play compliance (update when policy changes)
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        // Release signing config template. Populate via key.properties (NOT committed) or environment variables.
+        // Create android/key.properties with:
+        // storeFile=../keystore/schnell_verkauf.keystore
+        // storePassword=YOUR_STORE_PASSWORD
+        // keyPassword=YOUR_KEY_PASSWORD
+        // keyAlias=release
+        val keystoreProps = java.util.Properties()
+        val keystoreFile = rootProject.file("key.properties")
+        if (keystoreFile.exists()) {
+            keystoreFile.inputStream().use { keystoreProps.load(it) }
+            create("release") {
+                storeFile = file(keystoreProps["storeFile"] as String)
+                storePassword = keystoreProps["storePassword"] as String
+                keyAlias = keystoreProps["keyAlias"] as String
+                keyPassword = keystoreProps["keyPassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use real release key if available; fall back to debug for local convenience only.
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            // Keep Flutter + plugin entry points; default rules usually suffice. Add custom rules if reflection-heavy code breaks.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        debug {
+            // Faster builds; keep defaults.
         }
     }
 }

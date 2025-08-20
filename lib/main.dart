@@ -25,7 +25,7 @@ class SchnellVerkaufApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Schnell Verkauf',
+  title: 'Schnell Verkaufen',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(

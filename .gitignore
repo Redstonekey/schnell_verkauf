@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Keystore & signing (do not commit)
+key.properties
+**/*.keystore
+**/*.jks
+
+# Dart obfuscation split debug info directory
+build/debug-info/

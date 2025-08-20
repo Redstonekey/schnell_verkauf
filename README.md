@@ -1,4 +1,4 @@
-# Schnell Verkauf
+# Schnell Verkaufen
 
 Eine deutsche AI-App zum schnellen Verkaufen von Produkten über Kleinanzeigen.de.
 
@@ -23,7 +23,7 @@ Eine deutsche AI-App zum schnellen Verkaufen von Produkten über Kleinanzeigen.d
 
 ### 2. API-Schlüssel in der App konfigurieren
 
-1. Öffne die Schnell Verkauf App
+1. Öffne die Schnell Verkaufen App
 2. Tippe auf das Einstellungs-Symbol (⚙️) oben rechts
 3. Füge deinen API-Schlüssel ein
 4. Tippe auf "Speichern"
@@ -66,10 +66,10 @@ Eine deutsche AI-App zum schnellen Verkaufen von Produkten über Kleinanzeigen.d
 ## Wichtige Hinweise
 
 - ⚠️ **API-Schlüssel erforderlich**: Ohne Gemini API-Schlüssel funktioniert die KI-Analyse nicht
-- 📱 **Berechtigungen**: Kamera- und Speicher-Zugriff erforderlich
+- 📱 **Berechtigungen**: Kamera (optional wenn nur Galerie genutzt wird). Kein voller Speicherzugriff erforderlich (Scoped Access / Picker wird verwendet).
 - 🌐 **Internetverbindung**: Für KI-Analyse und Kleinanzeigen-Integration notwendig
-- 💾 **Lokale Speicherung**: Fotos werden automatisch in der Galerie gespeichert
-- 🔒 **Datenschutz**: API-Schlüssel wird nur lokal auf dem Gerät gespeichert
+- 💾 **Lokale Speicherung**: API-Schlüssel nur lokal (SharedPreferences). Fotos verbleiben in der Kamera-/Galerie-App.
+- 🔒 **Datenschutz**: Siehe [Privacy Policy](PRIVACY_POLICY.md)
 
 ## Fehlerbehebung
 
@@ -100,8 +100,14 @@ flutter pub get
 # App starten
 flutter run
 
-# Build für Android
-flutter build apk
+# Build für Android (Release Bundle)
+flutter build appbundle --release
+
+# Optional: Obfuskation
+flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info
+
+# Lint & Analyse
+flutter analyze
 
 # Build für iOS  
 flutter build ios

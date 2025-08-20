@@ -1,21 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Permissions for camera, internet and storage -->
+    <!-- Essential permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
-    <uses-feature android:name="android.hardware.camera.autofocus" />
-    
+    <!-- Android 13+ scoped media (images) if gallery selection is used by plugins (they usually add automatically) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Removed legacy external storage & broad storage permissions to comply with Play policies -->
+
+    <!-- Camera is useful but not strictly required if user can also pick images from gallery -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
     <application
-        android:label="schnell_verkauf"
+    android:label="Schnell Verkaufen"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
-        android:requestLegacyExternalStorage="true"
-        android:usesCleartextTraffic="true">
-        <activity
+        android:icon="@mipmap/ic_launcher">
+    <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
@@ -37,8 +37,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Don't delete the meta-data below.
-             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+    <!-- Flutter tooling meta-data -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

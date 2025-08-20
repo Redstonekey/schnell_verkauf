@@ -1,4 +1,4 @@
-# Schnell Verkauf
+# Schnell Verkaufen
 
 Eine deutsche AI-App zum schnellen Verkaufen von Produkten über Kleinanzeigen.de.
 
@@ -23,7 +23,7 @@ Eine deutsche AI-App zum schnellen Verkaufen von Produkten über Kleinanzeigen.d
 
 ### 2. API-Schlüssel in der App konfigurieren
 
-1. Öffne die Schnell Verkauf App
+1. Öffne die Schnell Verkaufen App
 2. Tippe auf das Einstellungs-Symbol (⚙️) oben rechts
 3. Füge deinen API-Schlüssel ein
 4. Tippe auf "Speichern"

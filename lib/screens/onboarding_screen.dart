@@ -229,7 +229,7 @@ class _IntroPage extends StatelessWidget {
                           ),
                           child: Column(
                             children: [
-                              Text('Schnell Verkauf', textAlign: TextAlign.center, style: headlineStyle),
+                              Text('Schnell Verkaufen', textAlign: TextAlign.center, style: headlineStyle),
                               const SizedBox(height: 18),
                               const Text(
                                 'Fotos aufnehmen – KI erkennt Details, erstellt Titel, Beschreibung & Preisvorschlag. Du bestätigst und veröffentlichst. Schneller, sauberer, smarter.',

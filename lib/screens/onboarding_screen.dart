@@ -14,6 +14,9 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerProviderStateMixin {
   late final PageController _pageController;
+  late final AnimationController _anim; // Intro animations
+  late final Animation<double> _fade;
+  late final Animation<double> _scale;
   int _index = 0;
   bool _checkingKey = true;
   bool _hasKey = false;
@@ -23,6 +26,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _pageController = PageController();
+  _anim = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
+  _fade = CurvedAnimation(parent: _anim, curve: const Interval(.15, 1, curve: Curves.easeOutCubic));
+  _scale = CurvedAnimation(parent: _anim, curve: const Interval(0, .55, curve: Curves.easeOutBack));
+  // Start a slight delayed animation for nicer feel
+  Future.delayed(const Duration(milliseconds: 120), () { if (mounted) _anim.forward(); });
     _loadKey();
   }
 
@@ -114,6 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   @override
   void dispose() {
     _pageController.dispose();
+  _anim.dispose();
     super.dispose();
   }
 
@@ -135,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                   end: Alignment.bottomRight,
                 ),
               )
-            : null,
+            : const BoxDecoration(color: Colors.white), // ensure clean page, no bleed-through
         child: SafeArea(
           child: Column(
             children: [
@@ -145,7 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                   physics: const NeverScrollableScrollPhysics(), // Enforce gating
                   onPageChanged: (i) => setState(() => _index = i),
                   children: [
-                    _IntroPage(),
+                    _IntroPage(fade: _fade, scale: _scale),
                     _ApiKeyPage(hasKey: _hasKey, onOpenSettings: _openApiKeyDialog),
                     _LoginInfoPage(loggedIn: _loggedIn, onLogin: _openLoginFlow),
                   ],
@@ -162,31 +171,207 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
 }
 
 class _IntroPage extends StatelessWidget {
+  final Animation<double> fade; final Animation<double> scale;
+  const _IntroPage({required this.fade, required this.scale});
   @override
   Widget build(BuildContext context) {
-    return _GradientContainer(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.flash_on, size: 110, color: Colors.white),
-            const SizedBox(height: 32),
-            Text('Willkommen bei\nSchnell Verkauf',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+    final headlineStyle = Theme.of(context).textTheme.displaySmall?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: Colors.white,
+      shadows: const [Shadow(blurRadius: 14, color: Color(0x55000000), offset: Offset(0, 4))],
+      height: 1.04,
+      letterSpacing: .2,
+    );
+
+    return Stack(
+      children: [
+        // Animated soft circles background
+        const _AnimatedBackground(),
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(32, 48, 32, 32),
+            child: FadeTransition(
+              opacity: fade,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ScaleTransition(
+                          scale: scale,
+                          child: Container(
+                            padding: const EdgeInsets.all(26),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const SweepGradient(
+                                colors: [Color(0xFFFF9800), Color(0xFFFFC107), Color(0xFFFF9800)],
+                              ),
+                              boxShadow: const [
+                                BoxShadow(color: Colors.black26, blurRadius: 30, spreadRadius: -4, offset: Offset(0, 12)),
+                              ],
+                            ),
+                            child: const Icon(Icons.flash_on, size: 88, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(height: 42),
+                        // Readability panel
+                        Container(
+                          padding: const EdgeInsets.fromLTRB(20, 22, 20, 26),
+                          constraints: const BoxConstraints(maxWidth: 560),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(.32),
+                            borderRadius: BorderRadius.circular(28),
+                            border: Border.all(color: Colors.white.withOpacity(.12)),
+                            boxShadow: const [
+                              BoxShadow(color: Color(0x40000000), blurRadius: 30, offset: Offset(0, 14)),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text('Schnell Verkauf', textAlign: TextAlign.center, style: headlineStyle),
+                              const SizedBox(height: 18),
+                              const Text(
+                                'Fotos aufnehmen – KI erkennt Details, erstellt Titel, Beschreibung & Preisvorschlag. Du bestätigst und veröffentlichst. Schneller, sauberer, smarter.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white, fontSize: 16.5, height: 1.34, fontWeight: FontWeight.w400),
+                              ),
+                              const SizedBox(height: 22),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: const [
+                                  _FeatureChip(icon: Icons.bolt, text: 'Sehr schnell'),
+                                  _FeatureChip(icon: Icons.camera_alt, text: 'Bildanalyse'),
+                                  _FeatureChip(icon: Icons.auto_fix_high, text: 'KI Text'),
+                                  _FeatureChip(icon: Icons.price_check, text: 'Preisvorschlag'),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Made to simplify selling', style: TextStyle(color: Colors.white54, fontSize: 12.5, letterSpacing: 1.05)),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Erstelle in Sekunden professionelle Kleinanzeigen: Fotos machen, KI analysiert, Texte & Preis automatisch – fertig!',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.3),
-            ),
-          ],
+          ),
         ),
+      ],
+    );
+  }
+}
+
+class _FeatureChip extends StatelessWidget {
+  final IconData icon; final String text; const _FeatureChip({required this.icon, required this.text});
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(.10),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withOpacity(.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(.25),
+            blurRadius: 18,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+        ],
       ),
     );
   }
+}
+
+class _AnimatedBackground extends StatefulWidget {
+  const _AnimatedBackground();
+  @override
+  State<_AnimatedBackground> createState() => _AnimatedBackgroundState();
+}
+
+class _AnimatedBackgroundState extends State<_AnimatedBackground> with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(seconds: 18))..repeat();
+  }
+  @override
+  void dispose() { _c.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final t = _c.value;
+        return Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFFF9500), Color(0xFFFFC107)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: CustomPaint(
+            painter: _BlobPainter(t),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BlobPainter extends CustomPainter {
+  final double t; _BlobPainter(this.t);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+  paint.color = const Color(0xFFFFFFFF).withOpacity(.05); // reduce brightness for readability
+
+    Path softBlob(double shift, double scale) {
+      final w = size.width; final h = size.height;
+      final cx = w * (.5 + .15 * (scale) * (0.5 - (t + shift) % 1));
+      final cy = h * (.45 + .25 * (scale) * (((t * 1.3 + shift) % 1) - .5));
+      final r = (w * .65 * scale) * (1 + .05 * (t * 4 % 1));
+      return Path()
+        ..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r));
+    }
+
+    for (final spec in [
+      [0.0, 1.0],
+      [0.33, .7],
+      [0.66, .5],
+    ]) {
+      canvas.drawPath(softBlob(spec[0], spec[1]), paint);
+    }
+
+    // Light gradient overlay vignette
+    final vignette = Paint()
+      ..shader = RadialGradient(
+        colors: [Colors.transparent, Colors.black.withOpacity(.35)],
+        stops: const [0.6, 1],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), vignette..blendMode = BlendMode.darken);
+  }
+  @override
+  bool shouldRepaint(covariant _BlobPainter oldDelegate) => true;
 }
 
 class _ApiKeyPage extends StatelessWidget {
@@ -353,19 +538,4 @@ class _Dots extends StatelessWidget {
   }
 }
 
-class _GradientContainer extends StatelessWidget {
-  final Widget child; const _GradientContainer({required this.child});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFFF9800), Color(0xFFFFC107)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: child,
-    );
-  }
-}
+// (Old _GradientContainer removed – replaced by animated background)

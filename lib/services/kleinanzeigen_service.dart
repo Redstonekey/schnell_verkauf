@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../models/product_data.dart';
+import '../screens/home_screen.dart';
 
 class KleinanzeigenService {
   static const String loginUrl = 'https://www.kleinanzeigen.de/m-einloggen.html';
@@ -269,6 +270,28 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
         ],
       ),
       body: WebViewWidget(controller: _controller),
+      floatingActionButton: SizedBox(
+        width: 140,
+        height: 140,
+        child: FloatingActionButton.extended(
+          heroTag: 'postAdDoneBtn',
+            backgroundColor: Colors.green.shade600,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.check_circle_outline, size: 38),
+            label: const Text(
+              'Fertig',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+            ),
+            onPressed: () {
+              // Go straight to Home, clearing the stack.
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                (route) => false,
+              );
+            },
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

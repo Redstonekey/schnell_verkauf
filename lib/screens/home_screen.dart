@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/kleinanzeigen_service.dart';
 import '../services/api_key_manager.dart';
 import 'camera_screen.dart';
 import 'api_key_settings_screen.dart';
@@ -275,34 +274,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(_hasApiKey ? 'Jetzt starten' : 'API-Schlüssel erforderlich'),
+        child: Text(_hasApiKey ? 'KI-Assistent starten' : 'API-Schlüssel erforderlich'),
               ),
             ),
-            const SizedBox(height: 16),
-            
-            // Login button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  KleinanzeigenService.showLoginWebView(context);
-                },
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.orange),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Bei Kleinanzeigen anmelden',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.orange,
-                  ),
-                ),
-              ),
-            ),
+      const SizedBox(height: 16),
                   ],
                 ),
               ),

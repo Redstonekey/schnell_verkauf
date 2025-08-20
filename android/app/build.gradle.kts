@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -28,17 +30,16 @@ android {
         versionName = flutter.versionName
     }
 
+    // Load keystore properties (if present) before defining signingConfigs
+    val keystoreProps = Properties()
+    val keystoreFile = rootProject.file("key.properties")
+    if (keystoreFile.exists()) {
+        keystoreFile.inputStream().use { keystoreProps.load(it) }
+    }
+
     signingConfigs {
-        // Release signing config template. Populate via key.properties (NOT committed) or environment variables.
-        // Create android/key.properties with:
-        // storeFile=../keystore/schnell_verkauf.keystore
-        // storePassword=YOUR_STORE_PASSWORD
-        // keyPassword=YOUR_KEY_PASSWORD
-        // keyAlias=release
-        val keystoreProps = java.util.Properties()
-        val keystoreFile = rootProject.file("key.properties")
+        // Create release config only when key.properties exists
         if (keystoreFile.exists()) {
-            keystoreFile.inputStream().use { keystoreProps.load(it) }
             create("release") {
                 storeFile = file(keystoreProps["storeFile"] as String)
                 storePassword = keystoreProps["storePassword"] as String

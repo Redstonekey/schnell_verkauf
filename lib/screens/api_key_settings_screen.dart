@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_key_manager.dart';
+import '../services/kleinanzeigen_service.dart';
 
 class ApiKeySettingsScreen extends StatefulWidget {
   const ApiKeySettingsScreen({super.key});
@@ -180,9 +181,10 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -313,7 +315,53 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
                   ),
                 ),
               ),
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.person, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text(
+                          'Kleinanzeigen Login',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Melden Sie sich hier bei Kleinanzeigen.de an. Ihre Session bleibt mittels Cookie gespeichert. Bei Ablauf können Sie sich erneut einloggen.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          KleinanzeigenService.showLoginWebView(context);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.orange),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.login, color: Colors.orange),
+                        label: const Text(
+                          'Bei Kleinanzeigen anmelden',
+                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
+          ),
         ),
       ),
     );

@@ -92,7 +92,7 @@ class _ImageReviewScreenState extends State<ImageReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+  return Scaffold(
       appBar: AppBar(
         title: const Text('Fotos überprüfen'),
         backgroundColor: Colors.orange,

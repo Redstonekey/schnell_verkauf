@@ -4,14 +4,40 @@ Eine deutsche AI-App zum schnellen Verkaufen von Produkten über Kleinanzeigen.d
 
 ## Funktionen
 
-- **Foto-Aufnahme**: Mache mehrere Fotos von deinem Produkt
-- **KI-Analyse**: Gemini 2.0 Flash erstellt automatisch:
   - Produkttitel (max 65 Zeichen)
   - Detaillierte Beschreibung
   - Realistischen Preis in Euro
-- **Bearbeitung**: Anpassen der KI-generierten Inhalte
-- **Direkter Export**: Automatisches Ausfüllen der Formulare auf Kleinanzeigen.de
 
+## Ad Control (Family No-Ad Codes)
+
+You can disable ads globally or per family code using a public GitHub Gist.
+
+1. Create (or edit) a Gist file named `ads_control.json`.
+2. Put JSON like this:
+
+```json
+{
+  "ads_enabled": true,
+  "codes": {
+    "ABC123": 1,
+    "FAMILY2025": 3,
+    "VIP999": 12
+  }
+}
+```
+
+Fields:
+- `ads_enabled`: set `false` to turn off ads for everyone instantly.
+- `codes`: map of `CODE_STRING` -> months of ad‑free (integer). Each month = 30 days (simplified).
+
+3. Copy the Raw URL of that Gist and set `AdsService.gistRawUrl` in `lib/services/ads_service.dart`.
+4. Distribute codes to family. Long‑press the Home screen title to enter or clear a code. Remaining ad‑free time shows on the Home screen while active.
+
+Revoking / extending:
+- Delete a code or change its months value; next refresh (app launch or re‑entry) updates entitlement.
+- Set `ads_enabled` to `false` for a global ad shutdown.
+
+Security note: This is a lightweight convenience system; Gist is public. Don’t reuse sensitive codes.
 ## Setup
 
 ### 1. Gemini API-Schlüssel erhalten

@@ -76,7 +76,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+  return Scaffold(
       appBar: AppBar(
         title: const Text('Produktdaten bearbeiten'),
         backgroundColor: Colors.orange,

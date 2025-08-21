@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart';
+import 'services/ads_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/onboarding_service.dart';
@@ -7,6 +10,16 @@ import 'services/api_key_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize Google Mobile Ads SDK
+  await MobileAds.instance.initialize();
+  // Configure test device so you can receive test ads (replace with your hash if different)
+  const testDeviceIds = [
+    '244859454DE58AD483B5603F3727A7E8', // seen in log output
+  ];
+  await MobileAds.instance.updateRequestConfiguration(
+    RequestConfiguration(testDeviceIds: testDeviceIds),
+  );
+  await AdsService.init();
   
   // Initialize services
   await Future.wait([
@@ -39,7 +52,129 @@ class SchnellVerkaufApp extends StatelessWidget {
           elevation: 0,
         ),
       ),
-  home: onboardingCompleted ? const HomeScreen() : const OnboardingScreen(),
+  builder: (context, child) => GlobalBannerHost(child: child ?? const SizedBox()),
+      home: onboardingCompleted ? const HomeScreen() : const OnboardingScreen(),
+    );
+  }
+}
+
+/// Hosts a single banner ad instance across the whole app so it doesn't
+/// reload on every route change.
+class GlobalBannerHost extends StatefulWidget {
+  final Widget child;
+  const GlobalBannerHost({super.key, required this.child});
+
+  @override
+  State<GlobalBannerHost> createState() => _GlobalBannerHostState();
+}
+
+class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBindingObserver {
+  BannerAd? _ad;
+  bool _loaded = false;
+  int _retry = 0;
+
+  static String get _bannerUnitId {
+    // Use Google's sample ad unit in debug builds to avoid invalid traffic
+    if (!kReleaseMode) {
+      return 'ca-app-pub-3940256099942544/6300978111';
+    }
+    return 'ca-app-pub-5163515529550008/1306525347';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Delay to ensure MediaQuery is ready (frame callback)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAdaptiveAd());
+  }
+
+  @override
+  void didChangeMetrics() {
+    // Orientation/size change: reload adaptive ad size once.
+    if (mounted) {
+      _loadAdaptiveAd();
+    }
+  }
+
+  Future<void> _loadAdaptiveAd() async {
+    _ad?.dispose();
+    _loaded = false;
+    // Determine available width for adaptive banner
+    final width = MediaQuery.of(context).size.width.truncate();
+    AnchoredAdaptiveBannerAdSize? adaptiveSize;
+    try {
+      adaptiveSize = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(width);
+    } catch (_) {
+      adaptiveSize = null;
+    }
+    final adSize = adaptiveSize ?? AdSize.banner;
+
+    _ad = BannerAd(
+      size: adSize,
+      adUnitId: _bannerUnitId,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (!mounted) return;
+            setState(() {
+              _loaded = true;
+              _retry = 0;
+            });
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (!mounted) return;
+          // Retry with backoff (no fill or transient errors)
+          final delay = Duration(seconds: (5 * (_retry + 1)).clamp(5, 30));
+          _retry = (_retry + 1).clamp(0, 5);
+          Future.delayed(delay, () { if (mounted) _loadAdaptiveAd(); });
+        },
+      ),
+    );
+    _ad!.load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ad = _ad;
+    return ValueListenableBuilder<bool>(
+      valueListenable: AdsService.showAds,
+      builder: (context, showAds, _) {
+        Widget banner = const SizedBox.shrink();
+        if (showAds && _loaded && ad != null) {
+          banner = Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Divider(height: 1, thickness: 0.5),
+              SizedBox(
+                width: double.infinity,
+                height: ad.size.height.toDouble(),
+                child: Center(
+                  child: SizedBox(
+                    width: ad.size.width.toDouble(),
+                    height: ad.size.height.toDouble(),
+                    child: AdWidget(ad: ad),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            Expanded(child: widget.child),
+            banner,
+          ],
+        );
+      },
     );
   }
 }

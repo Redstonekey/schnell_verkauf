@@ -3,6 +3,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- AdMob advertising ID permission -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <!-- Android 13+ scoped media (images) if gallery selection is used by plugins (they usually add automatically) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <!-- Removed legacy external storage & broad storage permissions to comply with Play policies -->
@@ -15,6 +17,10 @@
     android:label="Schnell Verkaufen"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- AdMob App ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-5163515529550008~8937603350" />
     <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -134,7 +134,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
       );
     }
 
-    return Scaffold(
+  return Scaffold(
       body: Container(
         decoration: _index == 0
             ? const BoxDecoration(

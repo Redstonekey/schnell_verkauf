@@ -60,6 +60,9 @@ dependencies:
   
   # Permission handling
   permission_handler: ^11.0.1
+  
+  # Ads
+  google_mobile_ads: ^4.0.0
 
 dev_dependencies:
   flutter_test:

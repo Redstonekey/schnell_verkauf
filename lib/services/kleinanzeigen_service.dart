@@ -113,7 +113,15 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
             if (url.contains('einloggen')) {
               if (mounted && _sessionChecked) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Session abgelaufen – bitte erneut einloggen.')),
+                  SnackBar(
+                    content: const Text('Session abgelaufen – bitte erneut einloggen.'),
+                    action: SnackBarAction(
+                      label: 'Einstellungen',
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/settings');
+                      },
+                    ),
+                  ),
                 );
               }
             }
@@ -121,6 +129,18 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
               _sessionChecked = true;
               _fillFormData();
             }
+              // Automatically navigate to Home if URL changes to something except the category change page
+                if (
+                !url.contains('kleinanzeigen.de/p-kategorie-aendern.html') &&
+                !url.contains('kleinanzeigen.de/p-anzeige-aufgeben-schritt2.html') &&
+                _sessionChecked &&
+                mounted
+                ) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  (route) => false,
+                );
+                }
           },
         ),
       )
@@ -270,28 +290,7 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
         ],
       ),
       body: WebViewWidget(controller: _controller),
-      floatingActionButton: SizedBox(
-        width: 140,
-        height: 140,
-        child: FloatingActionButton.extended(
-          heroTag: 'postAdDoneBtn',
-            backgroundColor: Colors.green.shade600,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.check_circle_outline, size: 38),
-            label: const Text(
-              'Fertig',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: 0.5),
-            ),
-            onPressed: () {
-              // Go straight to Home, clearing the stack.
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-                (route) => false,
-              );
-            },
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+  // ...existing code...
     );
   }
 }

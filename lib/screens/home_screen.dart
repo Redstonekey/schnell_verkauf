@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_key_manager.dart';
+import '../services/ads_service.dart';
 import 'camera_screen.dart';
 import 'api_key_settings_screen.dart';
 
@@ -93,9 +94,37 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    return Scaffold(
+  return Scaffold(
       appBar: AppBar(
-  title: const Text('Schnell Verkaufen'),
+  title: GestureDetector(
+          onLongPress: () async {
+            final controller = TextEditingController();
+            await showDialog(
+              context: context,
+              builder: (c) => AlertDialog(
+                title: const Text('Familien Code eingeben'),
+                content: TextField(
+                  controller: controller,
+                  decoration: const InputDecoration(hintText: 'Code oder leer zum Löschen'),
+                  autofocus: true,
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(c), child: const Text('Abbrechen')),
+                  TextButton(
+                    onPressed: () async {
+                      final code = controller.text.trim();
+                      // ignore: use_build_context_synchronously
+                      Navigator.pop(c);
+                      await AdsService.setFamilyCode(code.isEmpty ? null : code);
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+          },
+          child: const Text('Schnell Verkaufen'),
+        ),
         backgroundColor: Colors.orange,
         centerTitle: true,
         actions: [
@@ -198,6 +227,34 @@ class _HomeScreenState extends State<HomeScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
+            ValueListenableBuilder(
+              valueListenable: AdsService.showAds,
+              builder: (context, showAdsValue, _) {
+                if (showAdsValue) {
+                  return const SizedBox.shrink();
+                }
+                return ValueListenableBuilder(
+                  valueListenable: AdsService.remaining,
+                  builder: (context, remaining, __) {
+                    if (remaining == null) return const SizedBox.shrink();
+                    final days = remaining.inDays;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.withOpacity(.3)),
+                      ),
+                      child: Text(
+                        'Werbefrei noch ca. ${days > 0 ? '$days Tage' : 'wenige Stunden'}',
+                        style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
             
             // Description
             Container(

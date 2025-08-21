@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_key_manager.dart';
 import '../services/kleinanzeigen_service.dart';
+import '../services/ads_service.dart';
 
 class ApiKeySettingsScreen extends StatefulWidget {
   const ApiKeySettingsScreen({super.key});
@@ -14,11 +15,49 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   bool _isLoading = false;
   bool _hasApiKey = false;
   bool _obscureText = true;
+  String? _familyCode; // stored code
+  bool _loadingFamily = true;
 
   @override
   void initState() {
     super.initState();
     _loadApiKey();
+    _loadFamilyCode();
+  }
+
+  Future<void> _loadFamilyCode() async {
+    final code = await AdsService.getStoredCode();
+    if (mounted) {
+      setState(() {
+        _familyCode = code;
+        _loadingFamily = false;
+      });
+    }
+  }
+
+  Future<void> _setFamilyCode() async {
+    final controller = TextEditingController(text: _familyCode ?? '');
+    final newCode = await showDialog<String?>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Familien Code'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Code eingeben oder leer lassen zum Entfernen',
+          ),
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, null), child: const Text('Abbrechen')),
+          TextButton(onPressed: () => Navigator.pop(c, controller.text.trim()), child: const Text('Speichern')),
+        ],
+      ),
+    );
+    if (newCode == null) return; // cancelled
+    await AdsService.setFamilyCode(newCode.isEmpty ? null : newCode);
+    _loadFamilyCode();
   }
 
   Future<void> _loadApiKey() async {
@@ -42,7 +81,6 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
       );
       return;
     }
-
     setState(() {
       _isLoading = true;
     });
@@ -168,7 +206,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+  return Scaffold(
       appBar: AppBar(
         title: const Text('API-Schlüssel Einstellungen'),
         backgroundColor: Colors.orange,
@@ -315,6 +353,93 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
                   ),
                 ),
               ),
+            const SizedBox(height: 24),
+            // Family code section
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.lock, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('Secret Code', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Really secret!!!',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 12),
+                    ValueListenableBuilder<bool>(
+                      valueListenable: AdsService.showAds,
+                      builder: (context, adsOn, _) {
+                        return ValueListenableBuilder<String?>(
+                          valueListenable: AdsService.activeCode,
+                          builder: (context, activeCode, __) {
+                            return ValueListenableBuilder<Duration?>(
+                              valueListenable: AdsService.remaining,
+                              builder: (context, remaining, ___) {
+                                final active = !adsOn && activeCode != null;
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (_loadingFamily)
+                                      const Padding(
+                                        padding: EdgeInsets.only(bottom: 8.0),
+                                        child: LinearProgressIndicator(minHeight: 4),
+                                      )
+                                    else if (active)
+                                      Container(
+                                        margin: const EdgeInsets.only(bottom: 12),
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withOpacity(.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.green.withOpacity(.3)),
+                                        ),
+                                        child: Text(
+                                          'Aktiv: $activeCode – verbleibend ~${remaining != null ? remaining.inDays : '?'} Tage',
+                                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
+                                        ),
+                                      )
+                                    else if (_familyCode != null)
+                                      Container(
+                                        margin: const EdgeInsets.only(bottom: 12),
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.withOpacity(.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.red.withOpacity(.3)),
+                                        ),
+                                        child: Text(
+                                          'Code gespeichert aber abgelaufen / ungültig: $_familyCode',
+                                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: _setFamilyCode,
+                                        icon: const Icon(Icons.edit),
+                                        label: Text(_familyCode == null ? 'Code eingeben' : 'Code ändern / entfernen'),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             Card(
               child: Padding(

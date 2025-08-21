@@ -2,16 +2,16 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "de.joancode.schnell_verkauf"
-    // Use latest stable compileSdk (adjust when 36 becomes stable)
-    compileSdk = 35
-    ndkVersion = flutter.ndkVersion
+    // Updated to satisfy plugin requirements (camera_android & google_mobile_ads)
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

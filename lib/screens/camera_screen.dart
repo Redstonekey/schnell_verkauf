@@ -75,45 +75,72 @@ class _CameraScreenState extends State<CameraScreen> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AspectRatio(
-              aspectRatio: 3/4,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(4),
-                  topRight: Radius.circular(4),
-                ),
-                child: Image.file(
-                  File(imagePath),
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => const Padding(
-                    padding: EdgeInsets.all(24.0),
-                    child: Text('Vorschau konnte nicht geladen werden'),
+  // Keep default Material dialog colors (light) but still constrain layout.
+  insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxW = constraints.maxWidth;
+            final maxH = constraints.maxHeight; // already accounts for insetPadding
+            const desiredAspect = 3/4; // width / height for portrait image
+
+            // Target up to 70% of dialog height for the image area.
+            final imageMaxH = maxH * 0.7;
+            // Start with using full width for image.
+            double imgW = maxW;
+            double imgH = imgW / desiredAspect; // since aspect = w/h -> h = w / aspect
+            if (imgH > imageMaxH) {
+              imgH = imageMaxH;
+              imgW = imgH * desiredAspect;
+            }
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(4),
+                    topRight: Radius.circular(4),
+                  ),
+                  child: SizedBox(
+                    width: imgW,
+                    height: imgH,
+                    child: Image.file(
+                      File(imagePath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Text('Vorschau konnte nicht geladen werden'),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    setState(() {
-                      _capturedImages.removeLast();
-                    });
-                  },
-                  child: const Text('Löschen'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Behalten'),
+                Container(
+                  width: imgW,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          setState(() {
+                            _capturedImages.removeLast();
+                          });
+                        },
+                        child: const Text('Löschen'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Behalten'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

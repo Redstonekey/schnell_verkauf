@@ -226,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
             ValueListenableBuilder(
               valueListenable: AdsService.showAds,
               builder: (context, showAdsValue, _) {
@@ -255,8 +255,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-            
-            // Description
+            // Main action button (CTA moved above the How-To section)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _navigateToCamera,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _hasApiKey ? Colors.orange : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+  child: Text(_hasApiKey ? 'Jetzt verkaufen' : 'API-Schlüssel erforderlich'),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Description (How-To) moved below CTA
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -264,11 +282,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text(
+                    'So funktioniert es',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Icon(
-                        Icons.camera_alt, 
+                        Icons.camera_alt,
                         color: _hasApiKey ? Colors.orange : Colors.grey,
                       ),
                       const SizedBox(width: 12),
@@ -284,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       Icon(
-                        Icons.smart_toy, 
+                        Icons.smart_toy,
                         color: _hasApiKey ? Colors.orange : Colors.grey,
                       ),
                       const SizedBox(width: 12),
@@ -300,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       Icon(
-                        Icons.edit, 
+                        Icons.edit,
                         color: _hasApiKey ? Colors.orange : Colors.grey,
                       ),
                       const SizedBox(width: 12),
@@ -315,26 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 48),
-            
-            // Main action button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _navigateToCamera,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _hasApiKey ? Colors.orange : Colors.grey,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-        child: Text(_hasApiKey ? 'KI-Assistent starten' : 'API-Schlüssel erforderlich'),
-              ),
-            ),
-      const SizedBox(height: 16),
+            const SizedBox(height: 16),
                   ],
                 ),
               ),

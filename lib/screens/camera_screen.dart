@@ -234,27 +234,42 @@ class _CameraScreenState extends State<CameraScreen> {
   }
   Widget _buildFullScreenPreview(Orientation orientation) {
     final controller = _controller!;
-    // Use OverflowBox + FittedBox to cover without distorting aspect ratio.
+    // Revised logic:
+    //  - In PORTRAIT we still "cover" the screen (cropping a little) so user gets full height.
+    //    Because the sensor is landscape, we must invert the sensor aspect for the rotated preview (1 / aspectRatio).
+    //  - In LANDSCAPE we avoid the former extra Transform.scale that caused heavy zoom & edge warping.
+    //    We instead show the full camera feed inside an AspectRatio, accepting letter‑boxing if device ratio is wider.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final previewAspect = controller.value.aspectRatio; // width / height
+        final sensorAspect = controller.value.aspectRatio; // sensor natural (landscape) width/height
         final screenAspect = constraints.maxWidth / constraints.maxHeight;
+        final bool isPortrait = orientation == Orientation.portrait;
 
-        // For portrait orientation the preview is rotated by the system; we still rely on aspect as given.
-        double scale;
-        if (screenAspect > previewAspect) {
-          // Screen wider than preview -> scale by width ratio
-          scale = screenAspect / previewAspect;
-        } else {
-          // Screen narrower -> scale by height ratio (invert aspects)
-          scale = previewAspect / screenAspect;
+        // When portrait the preview you see is rotated, so effective aspect should be inverted.
+        final double portraitEffectiveAspect = 1 / sensorAspect; // height/width after rotation
+
+        if (!isPortrait) {
+          // LANDSCAPE: Show entire frame without artificial zoom (prevents distortion/warping)
+            return Container(
+              color: Colors.black,
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: sensorAspect,
+                  child: CameraPreview(controller),
+                ),
+              ),
+            );
         }
+
+        // PORTRAIT: Scale to cover (like BoxFit.cover) while preserving aspect (may crop a bit horizontally)
+        double scale = screenAspect / portraitEffectiveAspect;
+        if (scale < 1) scale = 1 / scale; // ensure we cover
 
         return Center(
           child: Transform.scale(
             scale: scale,
             child: AspectRatio(
-              aspectRatio: previewAspect,
+              aspectRatio: portraitEffectiveAspect,
               child: CameraPreview(controller),
             ),
           ),

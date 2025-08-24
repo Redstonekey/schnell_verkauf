@@ -136,10 +136,7 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
                 _sessionChecked &&
                 mounted
                 ) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
-                  (route) => false,
-                );
+                _showSuccessAndNavigateHome();
                 }
           },
         ),
@@ -253,6 +250,43 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
         const SnackBar(content: Text('Bilder wurden eingefügt – sie können nun die Reihenfolge ändern.')),
       );
     }
+  }
+
+  void _showSuccessAndNavigateHome() {
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          icon: const Icon(
+            Icons.check_circle,
+            color: Colors.green,
+            size: 64,
+          ),
+          title: const Text(
+            'Erfolgreich hochgeladen!',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Dein Produkt wurde erfolgreich zu Kleinanzeigen hinzugefügt.',
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  (route) => false,
+                );
+              },
+              child: const Text('Zur Startseite'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

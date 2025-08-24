@@ -56,7 +56,13 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
       ),
     );
     if (newCode == null) return; // cancelled
-    await AdsService.setFamilyCode(newCode.isEmpty ? null : newCode);
+    final ok = await AdsService.setFamilyCode(newCode.isEmpty ? null : newCode);
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Code ungültig oder Netzwerkfehler'), backgroundColor: Colors.red));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(newCode.isEmpty ? 'Code entfernt' : 'Code aktiviert'), backgroundColor: Colors.green));
+    }
     _loadFamilyCode();
   }
 

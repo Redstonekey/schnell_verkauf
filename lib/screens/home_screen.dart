@@ -115,7 +115,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       final code = controller.text.trim();
                       // ignore: use_build_context_synchronously
                       Navigator.pop(c);
-                      await AdsService.setFamilyCode(code.isEmpty ? null : code);
+                      final ok = await AdsService.setFamilyCode(code.isEmpty ? null : code);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            code.isEmpty
+                                ? (ok ? 'Code entfernt' : 'Entfernen fehlgeschlagen')
+                                : (ok ? 'Code aktiviert' : 'Code ungültig'),
+                          ),
+                          backgroundColor: ok ? Colors.green : Colors.red,
+                        ),
+                      );
                     },
                     child: const Text('OK'),
                   ),

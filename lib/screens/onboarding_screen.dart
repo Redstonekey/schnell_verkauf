@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/onboarding_service.dart';
 import '../services/api_key_manager.dart';
-import 'api_key_settings_screen.dart';
 import '../services/kleinanzeigen_service.dart';
 import 'home_screen.dart';
 
@@ -17,15 +17,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   late final AnimationController _anim; // Intro animations
   late final Animation<double> _fade;
   late final Animation<double> _scale;
+  late final TextEditingController _apiKeyController;
   int _index = 0;
   bool _checkingKey = true;
   bool _hasKey = false;
   bool _loggedIn = false; // Kleinanzeigen Login Status
+  bool _obscureApiKey = true;
+  bool _savingApiKey = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _apiKeyController = TextEditingController();
   _anim = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
   _fade = CurvedAnimation(parent: _anim, curve: const Interval(.15, 1, curve: Curves.easeOutCubic));
   _scale = CurvedAnimation(parent: _anim, curve: const Interval(0, .55, curve: Curves.easeOutBack));
@@ -34,9 +38,49 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
     _loadKey();
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _anim.dispose();
+    _apiKeyController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadKey() async {
+    final key = await ApiKeyManager.getApiKey();
+    if (key != null && key.isNotEmpty) {
+      _apiKeyController.text = key;
+    }
     _hasKey = await ApiKeyManager.hasApiKey();
     setState(() { _checkingKey = false; });
+  }
+
+  Future<void> _saveApiKey() async {
+    final key = _apiKeyController.text.trim();
+    if (key.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte einen API Key eingeben')),
+      );
+      return;
+    }
+
+    setState(() { _savingApiKey = true; });
+    
+    try {
+      await ApiKeyManager.saveApiKey(key);
+      setState(() {
+        _hasKey = true;
+        _savingApiKey = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('API Key erfolgreich gespeichert')),
+      );
+    } catch (e) {
+      setState(() { _savingApiKey = false; });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Speichern: $e')),
+      );
+    }
   }
 
   void _next() async {
@@ -46,7 +90,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
     }
     // API Key page (index 1): enforce key set
     if (_index == 1 && !_hasKey) {
-      _openApiKeyDialog();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte zuerst einen API Key eingeben')),
+      );
       return;
     }
     if (_index == 1 && _hasKey) {
@@ -66,11 +112,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     }
-  }
-
-  void _openApiKeyDialog() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const ApiKeySettingsScreen()));
-    _loadKey();
   }
 
   Future<void> _openLoginFlow() async {
@@ -120,13 +161,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   }
 
   @override
-  void dispose() {
-    _pageController.dispose();
-  _anim.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     if (_checkingKey) {
       return const Scaffold(
@@ -155,7 +189,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                   onPageChanged: (i) => setState(() => _index = i),
                   children: [
                     _IntroPage(fade: _fade, scale: _scale),
-                    _ApiKeyPage(hasKey: _hasKey, onOpenSettings: _openApiKeyDialog),
+                    _ApiKeyPage(
+              hasKey: _hasKey,
+              apiKeyController: _apiKeyController,
+              obscureApiKey: _obscureApiKey,
+              savingApiKey: _savingApiKey,
+              onToggleObscure: () => setState(() { _obscureApiKey = !_obscureApiKey; }),
+              onSaveApiKey: _saveApiKey,
+            ),
                     _LoginInfoPage(loggedIn: _loggedIn, onLogin: _openLoginFlow),
                   ],
                 ),
@@ -376,8 +417,20 @@ class _BlobPainter extends CustomPainter {
 
 class _ApiKeyPage extends StatelessWidget {
   final bool hasKey;
-  final VoidCallback onOpenSettings;
-  const _ApiKeyPage({required this.hasKey, required this.onOpenSettings});
+  final TextEditingController apiKeyController;
+  final bool obscureApiKey;
+  final bool savingApiKey;
+  final VoidCallback onToggleObscure;
+  final VoidCallback onSaveApiKey;
+  
+  const _ApiKeyPage({
+    required this.hasKey,
+    required this.apiKeyController,
+    required this.obscureApiKey,
+    required this.savingApiKey,
+    required this.onToggleObscure,
+    required this.onSaveApiKey,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -399,7 +452,7 @@ class _ApiKeyPage extends StatelessWidget {
           const SizedBox(height: 16),
           _InfoTile(icon: Icons.lock_open, text: 'Kostenlos & schnell erstellt'),
           _InfoTile(icon: Icons.security, text: 'Nur lokal gespeichert – kein Serverzugriff'),
-            _InfoTile(icon: Icons.speed, text: 'Ermöglicht Bildanalyse & Preisvorschlag'),
+          _InfoTile(icon: Icons.speed, text: 'Ermöglicht Bildanalyse & Preisvorschlag'),
           const SizedBox(height: 24),
           _StepsBox(steps: const [
             'Gehe zu https://makersuite.google.com/app/apikey',
@@ -408,11 +461,58 @@ class _ApiKeyPage extends StatelessWidget {
             'Key kopieren & hier einfügen',
           ]),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: onOpenSettings,
-            icon: Icon(hasKey ? Icons.check_circle : Icons.add),
-            label: Text(hasKey ? 'API Key aktualisieren' : 'API Key hinzufügen'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+          // API Key Input Field
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'API Key eingeben:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: apiKeyController,
+                  obscureText: obscureApiKey,
+                  decoration: InputDecoration(
+                    hintText: 'Füge hier deinen Gemini API Key ein',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(obscureApiKey ? Icons.visibility : Icons.visibility_off),
+                      onPressed: onToggleObscure,
+                    ),
+                  ),
+                  maxLines: 1,
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: savingApiKey ? null : onSaveApiKey,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: savingApiKey
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('API Key speichern'),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           if (hasKey)

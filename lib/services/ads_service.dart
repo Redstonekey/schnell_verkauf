@@ -25,8 +25,9 @@ class AdsService {
   static const _prefsCodeActivatedKey = 'family_ad_code_activated';
   static const _prefsCodeMonthsKey = 'family_ad_code_months';
 
-  /// Set this to your raw gist URL (raw.githubusercontent.../gist-id/ads_control.json)
-  static String gistRawUrl = 'https://gist.githubusercontent.com/Redstonekey/322388e07b25d512fafec2d8b65f7e41/raw/5e943f9ff17c054452494ea4131e8a161c2c3c95/ads_control.json';
+  /// Raw gist URL (without pinned commit so updates propagate)
+  /// e.g. https://gist.githubusercontent.com/<user>/<gist-id>/raw/ads_control.json
+  static String gistRawUrl = 'https://gist.githubusercontent.com/Redstonekey/322388e07b25d512fafec2d8b65f7e41/raw/ads_control.json';
 
   static final ValueNotifier<bool> showAds = ValueNotifier<bool>(true);
   static final ValueNotifier<String?> activeCode = ValueNotifier<String?>(null);
@@ -46,19 +47,60 @@ class AdsService {
     return prefs.getString(_prefsCodeKey);
   }
 
-  static Future<void> setFamilyCode(String? code) async {
+  /// Validates code against remote gist before storing.
+  /// Returns true if accepted (or removed), false if invalid or network failure.
+  static Future<bool> setFamilyCode(String? code) async {
     final prefs = await SharedPreferences.getInstance();
     if (code == null || code.trim().isEmpty) {
       await prefs.remove(_prefsCodeKey);
       await prefs.remove(_prefsCodeActivatedKey);
       await prefs.remove(_prefsCodeMonthsKey);
-    } else {
-      await prefs.setString(_prefsCodeKey, code.trim().toUpperCase());
-      // Reset so new months definition can apply
-      await prefs.remove(_prefsCodeActivatedKey);
-      await prefs.remove(_prefsCodeMonthsKey);
+      await _evaluate(forceNetwork: true);
+      return true; // removal success
     }
-    await _evaluate(forceNetwork: true);
+
+    // Fetch remote for validation
+    Map<String, dynamic> remote = {};
+    try {
+      final resp = await http.get(Uri.parse(gistRawUrl)).timeout(const Duration(seconds: 8));
+      if (resp.statusCode == 200) {
+        remote = jsonDecode(resp.body) as Map<String, dynamic>;
+      }
+    } catch (_) {
+      return false; // network failure => cannot validate
+    }
+
+    final bool adsEnabledRemote = remote['ads_enabled'] != false; // still consider code if global disabled (ads off anyway)
+    final Map<String, dynamic> codes = (remote['codes'] is Map<String, dynamic>) ? remote['codes'] : {};
+    final codeUpper = code.trim().toUpperCase();
+    int? months = codes[codeUpper] is int ? codes[codeUpper] as int : null;
+    if (months == null) {
+      return false; // invalid code
+    }
+    // Store code + activation
+    final activation = DateTime.now().millisecondsSinceEpoch;
+    await prefs.setString(_prefsCodeKey, codeUpper);
+    await prefs.setInt(_prefsCodeActivatedKey, activation);
+    await prefs.setInt(_prefsCodeMonthsKey, months);
+
+    // Update notifiers immediately
+    if (!adsEnabledRemote) {
+      showAds.value = false;
+      activeCode.value = codeUpper;
+      remaining.value = null;
+    } else {
+      final expiry = DateTime.fromMillisecondsSinceEpoch(activation).add(Duration(days: months * 30));
+      final now = DateTime.now();
+      showAds.value = now.isAfter(expiry) ? true : false;
+      if (showAds.value) {
+        activeCode.value = null;
+        remaining.value = null;
+      } else {
+        activeCode.value = codeUpper;
+        remaining.value = expiry.difference(now);
+      }
+    }
+    return true;
   }
 
   static Future<void> refresh() => _evaluate(forceNetwork: true);

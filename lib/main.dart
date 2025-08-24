@@ -12,13 +12,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Initialize Google Mobile Ads SDK
   await MobileAds.instance.initialize();
-  // Configure test device so you can receive test ads (replace with your hash if different)
-  const testDeviceIds = [
-    '244859454DE58AD483B5603F3727A7E8', // seen in log output
-  ];
-  await MobileAds.instance.updateRequestConfiguration(
-    RequestConfiguration(testDeviceIds: testDeviceIds),
-  );
+  // Only configure test devices in debug mode for development
+  if (kDebugMode) {
+    const testDeviceIds = [
+      '244859454DE58AD483B5603F3727A7E8', // seen in log output
+    ];
+    await MobileAds.instance.updateRequestConfiguration(
+      RequestConfiguration(testDeviceIds: testDeviceIds),
+    );
+  }
   await AdsService.init();
   
   // Initialize services
@@ -74,10 +76,7 @@ class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBinding
   int _retry = 0;
 
   static String get _bannerUnitId {
-    // Use Google's sample ad unit in debug builds to avoid invalid traffic
-    if (!kReleaseMode) {
-      return 'ca-app-pub-3940256099942544/6300978111';
-    }
+    // Always use real ad unit ID
     return 'ca-app-pub-5163515529550008/1306525347';
   }
 

@@ -5,8 +5,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
-import '../services/ai_service.dart';
-import 'edit_product_screen.dart';
+import 'additional_info_screen.dart';
 
 class ImageReviewScreen extends StatefulWidget {
   final List<String> imagePaths;
@@ -21,50 +20,15 @@ class ImageReviewScreen extends StatefulWidget {
 }
 
 class _ImageReviewScreenState extends State<ImageReviewScreen> {
-  bool _isAnalyzing = false;
-  bool _isTextFieldFocused = false;
-  final TextEditingController _additionalInfoController = TextEditingController();
-  final FocusNode _textFieldFocusNode = FocusNode();
-  
-  // Preset phrases for common product conditions
-  final List<String> _presets = [
-    'Neuwertig',
-    'Sehr guter Zustand',
-    'Guter Zustand',
-    'Gebraucht',
-    'Defekt',
-    'Für Bastler',
-    'Gebrauchsspuren',
-    'Originalverpackung',
-    'Ohne Zubehör',
-    'Vintage',
-    'Sammlerstück',
-    'Funktionsfähig',
-  ];
-  
   @override
   void initState() {
     super.initState();
-    _textFieldFocusNode.addListener(() {
-      setState(() {
-        _isTextFieldFocused = _textFieldFocusNode.hasFocus;
-      });
-    });
   }
   
   void _removeImage(int index) {
     setState(() {
       widget.imagePaths.removeAt(index);
     });
-  }
-  
-  void _addPresetText(String preset) {
-    final currentText = _additionalInfoController.text;
-    if (currentText.isEmpty) {
-      _additionalInfoController.text = preset;
-    } else {
-      _additionalInfoController.text = '$currentText, $preset';
-    }
   }
   
   Future<void> _cropImage(int index) async {
@@ -122,12 +86,10 @@ class _ImageReviewScreenState extends State<ImageReviewScreen> {
   
   @override
   void dispose() {
-    _additionalInfoController.dispose();
-    _textFieldFocusNode.dispose();
     super.dispose();
   }
   
-  Future<void> _analyzeWithAI() async {
+  void _continueToAdditionalInfo() {
     if (widget.imagePaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Bitte mindestens ein Foto hinzufügen')),
@@ -135,75 +97,22 @@ class _ImageReviewScreenState extends State<ImageReviewScreen> {
       return;
     }
     
-    setState(() {
-      _isAnalyzing = true;
-    });
-    
-    try {
-      final additionalInfo = _additionalInfoController.text.trim();
-      final productData = await AIService.analyzeImages(widget.imagePaths, additionalInfo: additionalInfo);
-      
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditProductScreen(productData: productData),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        String errorMessage = 'Fehler bei der Analyse: $e';
-        
-        // Check if it's an API key error
-        if (e.toString().contains('API-Schlüssel')) {
-          errorMessage = 'API-Schlüssel nicht konfiguriert. Bitte gehen Sie zu den Einstellungen.';
-          
-          // Show settings dialog
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('API-Schlüssel erforderlich'),
-              content: const Text(
-                'Um die KI-Analyse zu nutzen, müssen Sie einen Gemini API-Schlüssel in den Einstellungen konfigurieren.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isAnalyzing = false;
-        });
-      }
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AdditionalInfoScreen(imagePaths: widget.imagePaths),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text('Fotos überprüfen'),
         backgroundColor: Colors.orange,
       ),
-      body: Stack(
-        children: [
-          Column(
+      body: Column(
         children: [
           if (widget.imagePaths.isEmpty)
             const Expanded(
@@ -216,9 +125,8 @@ class _ImageReviewScreenState extends State<ImageReviewScreen> {
               ),
             )
           else ...[
-            // Images section - less space when text field is focused
+            // Images section
             Expanded(
-              flex: _isTextFieldFocused ? 1 : 3,
               child: GridView.builder(
                 padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -297,138 +205,26 @@ class _ImageReviewScreenState extends State<ImageReviewScreen> {
                 },
               ),
             ),
-            
-            // Additional information section - more space when text field is focused
-            Expanded(
-              flex: _isTextFieldFocused ? 3 : 2,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  border: Border(
-                    top: BorderSide(color: Colors.grey[300]!),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Zusätzliche Informationen für die KI:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Text input field - expands when focused
-                    TextField(
-                      controller: _additionalInfoController,
-                      focusNode: _textFieldFocusNode,
-                      maxLines: _isTextFieldFocused ? 4 : 2,
-                      decoration: const InputDecoration(
-                        hintText: 'Beschreiben Sie den Zustand oder besondere Eigenschaften...',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.all(12),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Preset buttons - less space when text field is focused
-                    if (!_isTextFieldFocused) ...[
-                      const Text(
-                        'Schnellauswahl:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: _presets.map((preset) {
-                              return ActionChip(
-                                label: Text(preset),
-                                onPressed: () => _addPresetText(preset),
-                                backgroundColor: Colors.orange[100],
-                                labelStyle: const TextStyle(fontSize: 12),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ] else ...[
-                      // Show compact preset buttons when focused
-                      const Text(
-                        'Schnellauswahl:',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 100,
-                        child: SingleChildScrollView(
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: _presets.map((preset) {
-                              return ActionChip(
-                                label: Text(preset),
-                                onPressed: () => _addPresetText(preset),
-                                backgroundColor: Colors.orange[100],
-                                labelStyle: const TextStyle(fontSize: 11),
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
           ],
           
+          // Bottom button
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: _isAnalyzing ? null : _analyzeWithAI,
+              onPressed: _continueToAdditionalInfo,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
               ),
-              child: _isAnalyzing
-                  ? const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Text('KI analysiert...'),
-                      ],
-                    )
-                  : const Text('Mit KI analysieren'),
+              child: const Text('Weiter zur KI-Analyse'),
             ),
           ),
         ],
       ),
-      ],
-    ));
+    );
   }
 }
 

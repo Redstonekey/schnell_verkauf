@@ -181,23 +181,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            
-            // Info text
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-              ),
-              child: const Text(
-                '💡 Hinweis: Die Fotos werden in Ihrer Galerie gespeichert. '
-                'Beim Aufgeben der Anzeige müssen Sie diese manuell aus der Galerie auswählen, '
-                'da ein automatischer Upload nicht möglich ist.',
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
-          ],
+                      ],
         ),
       ),
     );

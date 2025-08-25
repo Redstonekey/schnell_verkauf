@@ -38,6 +38,7 @@ dependencies:
   # Camera and image handling
   camera: ^0.10.5+5
   image_picker: ^1.0.4
+  crop_your_image: ^2.0.0
   path_provider: ^2.1.1
   path: ^1.8.3
   

@@ -5,7 +5,7 @@ import '../models/product_data.dart';
 import 'api_key_manager.dart';
 
 class AIService {
-  static Future<ProductData> analyzeImages(List<String> imagePaths) async {
+  static Future<ProductData> analyzeImages(List<String> imagePaths, {String? additionalInfo}) async {
     try {
       // Get API key
       final apiKey = await ApiKeyManager.getApiKey();
@@ -27,9 +27,15 @@ class AIService {
       }
 
       // Prepare the prompt in German
-      const prompt = '''
+      String prompt = '''
 Analysiere die Bilder eines Produkts und erstelle eine Kleinanzeige auf Deutsch. 
-Schaue dir die Bilder genau an und identifiziere das Produkt.
+Schaue dir die Bilder genau an und identifiziere das Produkt.''';
+
+      if (additionalInfo != null && additionalInfo.isNotEmpty) {
+        prompt += '\n\nZusätzliche Informationen vom Nutzer: $additionalInfo';
+      }
+
+      prompt += '''
 
 Erstelle:
 - Einen präzisen, aussagekräftigen Titel (max 65 Zeichen)

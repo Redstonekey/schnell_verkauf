@@ -214,7 +214,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   Widget build(BuildContext context) {
   return Scaffold(
       appBar: AppBar(
-        title: const Text('API-Schlüssel Einstellungen'),
+        title: const Text('Einstellungen'),
         backgroundColor: Colors.orange,
         actions: [
           IconButton(

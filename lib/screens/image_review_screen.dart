@@ -5,7 +5,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
-import 'additional_info_screen.dart';
+import 'select_ai_images_screen.dart';
 
 class ImageReviewScreen extends StatefulWidget {
   final List<String> imagePaths;
@@ -89,18 +89,18 @@ class _ImageReviewScreenState extends State<ImageReviewScreen> {
     super.dispose();
   }
   
-  void _continueToAdditionalInfo() {
+  void _continueToSelectAIImages() {
     if (widget.imagePaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Bitte mindestens ein Foto hinzufügen')),
       );
       return;
     }
-    
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AdditionalInfoScreen(imagePaths: widget.imagePaths),
+        builder: (context) => SelectAIImagesScreen(allImagePaths: widget.imagePaths),
       ),
     );
   }
@@ -212,7 +212,7 @@ class _ImageReviewScreenState extends State<ImageReviewScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: _continueToAdditionalInfo,
+              onPressed: _continueToSelectAIImages,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
                 foregroundColor: Colors.white,

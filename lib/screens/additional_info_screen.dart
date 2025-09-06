@@ -63,7 +63,7 @@ class _AdditionalInfoScreenState extends State<AdditionalInfoScreen> {
     
     try {
       final additionalInfo = _additionalInfoController.text.trim();
-      final productData = await AIService.analyzeImages(widget.imagePaths, additionalInfo: additionalInfo);
+  final productData = await AIService.analyzeImages(widget.imagePaths, additionalInfo: additionalInfo);
       
       if (mounted) {
         Navigator.pushReplacement(
@@ -75,7 +75,14 @@ class _AdditionalInfoScreenState extends State<AdditionalInfoScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Fehler bei der Analyse: $e';
+        final err = e.toString();
+        String errorMessage = 'Fehler bei der Analyse: $err';
+        // Detect rate/quota messages from AIService and show friendlier text
+        if (err.toLowerCase().contains('rate') || err.toLowerCase().contains('quota') || err.toLowerCase().contains('rate-limit')) {
+          errorMessage = 'Rate-Limit erreicht oder Quota überschritten. Bitte warten Sie kurz und versuchen Sie es erneut.';
+        } else if (err.toLowerCase().contains('analys') && err.toLowerCase().contains('arbeit')) {
+          errorMessage = 'Analyse läuft bereits. Bitte warten.';
+        }
         
         // Check if it's an API key error
         if (e.toString().contains('API-Schlüssel')) {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_key_manager.dart';
 import '../services/kleinanzeigen_service.dart';
 import '../services/ads_service.dart';
+import 'package:flutter/services.dart';
+import 'package:advertising_id/advertising_id.dart';
 
 class ApiKeySettingsScreen extends StatefulWidget {
   const ApiKeySettingsScreen({super.key});
@@ -17,12 +19,80 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   bool _obscureText = true;
   String? _familyCode; // stored code
   bool _loadingFamily = true;
+  bool _hasKleinanzeigenCookies = false;
 
   @override
   void initState() {
     super.initState();
     _loadApiKey();
     _loadFamilyCode();
+    _loadKleinanzeigenCookieState();
+  }
+
+  Future<void> _loadKleinanzeigenCookieState() async {
+    final has = await KleinanzeigenService.hasCookies();
+    if (!mounted) return;
+    setState(() {
+      _hasKleinanzeigenCookies = has;
+    });
+  }
+
+  Future<void> _kleinanzeigenLogout() async {
+    setState(() { _isLoading = true; });
+    final ok = await KleinanzeigenService.clearCookiesAndLogout();
+    if (!mounted) return;
+    setState(() { _isLoading = false; _hasKleinanzeigenCookies = false; });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Kleinanzeigen: Cookies gelöscht' : 'Kleinanzeigen: Keine oder Fehler beim Löschen'),
+        backgroundColor: ok ? Colors.green : Colors.red,
+      ),
+    );
+  }
+
+  Future<void> _showDebugInfo() async {
+    String? adId;
+    bool limitAdTracking = false;
+    try {
+      adId = await AdvertisingId.id(true);
+    } catch (e) {
+      adId = null;
+    }
+    try {
+      final lat = await AdvertisingId.isLimitAdTrackingEnabled;
+      limitAdTracking = lat ?? false;
+    } catch (_) {}
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Debug Informationen'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Werbe-ID: ${adId ?? 'nicht verfügbar'}'),
+              const SizedBox(height: 8),
+              Text('Limit Ad Tracking: ${limitAdTracking ? 'Ja' : 'Nein'}'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Schließen')),
+          TextButton(
+            onPressed: adId == null
+                ? null
+                : () {
+                    Clipboard.setData(ClipboardData(text: adId ?? ''));
+                    Navigator.pop(c);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Werbe-ID kopiert')));
+                  },
+            child: const Text('Werbe-ID kopieren'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadFamilyCode() async {
@@ -471,26 +541,70 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          KleinanzeigenService.showLoginWebView(context);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.orange),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                        icon: const Icon(Icons.login, color: Colors.orange),
-                        label: const Text(
-                          'Bei Kleinanzeigen anmelden',
-                          style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
-                        ),
+                      child: _hasKleinanzeigenCookies
+                          ? OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _kleinanzeigenLogout,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.red),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: const Icon(Icons.logout, color: Colors.red),
+                              label: _isLoading
+                                  ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Text(
+                                      'Kleinanzeigen Logout',
+                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                                    ),
+                            )
+                          : OutlinedButton.icon(
+                              onPressed: () async {
+                                await KleinanzeigenService.showLoginWebView(context);
+                                // Refresh cookie state when returning from the login webview
+                                await _loadKleinanzeigenCookieState();
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.orange),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              icon: const Icon(Icons.login, color: Colors.orange),
+                              label: const Text(
+                                'Bei Kleinanzeigen anmelden',
+                                style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: const [Icon(Icons.bug_report, color: Colors.orange), SizedBox(width: 8), Text('Debug Informationen', style: TextStyle(fontWeight: FontWeight.bold))]),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _showDebugInfo,
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                        child: const Text('Debug Informationen anzeigen'),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
           ),
         ),

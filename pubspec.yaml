@@ -58,6 +58,9 @@ dependencies:
   
   # UI components
   flutter_speed_dial: ^7.0.0
+
+  # Advertising ID (AAID / IDFA)
+  advertising_id: ^2.7.1
   
   # Permission handling
   permission_handler: ^11.0.1

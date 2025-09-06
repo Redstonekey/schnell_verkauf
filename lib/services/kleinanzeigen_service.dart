@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_data.dart';
 import '../screens/home_screen.dart';
 
 class KleinanzeigenService {
   static const String loginUrl = 'https://www.kleinanzeigen.de/m-einloggen.html';
   static const String postAdUrl = 'https://www.kleinanzeigen.de/p-anzeige-aufgeben-schritt2.html';
+  static const String _prefsKey = 'kleinanzeigen_has_cookies';
   
   static Future<void> showLoginWebView(BuildContext context) async {
     await Navigator.push(
@@ -26,6 +28,43 @@ class KleinanzeigenService {
       ),
     );
   }
+
+  // Persist a small flag to remember if the user previously logged in via the WebView
+  // (we set this after detecting a successful navigation away from the login page).
+  static Future<void> _setHasCookies(bool v) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setBool(_prefsKey, v);
+    } catch (e) {
+      debugPrint('Failed to set kleinanzeigen cookie flag: $e');
+    }
+  }
+
+  // Public helper to mark that the user has an active kleinanzeigen session (cookies stored)
+  static Future<void> markHasCookies() async => _setHasCookies(true);
+
+  static Future<bool> hasCookies() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      return sp.getBool(_prefsKey) ?? false;
+    } catch (e) {
+      debugPrint('Failed to read kleinanzeigen cookie flag: $e');
+      return false;
+    }
+  }
+
+  // Clears webview cookies and resets our persisted flag.
+  static Future<bool> clearCookiesAndLogout() async {
+    try {
+      final cleared = await WebViewCookieManager().clearCookies();
+      await _setHasCookies(false);
+      return cleared;
+    } catch (e) {
+      debugPrint('Error clearing cookies: $e');
+      await _setHasCookies(false);
+      return false;
+    }
+  }
 }
 
 class KleinanzeigenLoginScreen extends StatefulWidget {
@@ -37,6 +76,7 @@ class KleinanzeigenLoginScreen extends StatefulWidget {
 
 class _KleinanzeigenLoginScreenState extends State<KleinanzeigenLoginScreen> {
   late final WebViewController _controller;
+  bool _cookiesDetected = false;
 
   @override
   void initState() {
@@ -48,11 +88,29 @@ class _KleinanzeigenLoginScreenState extends State<KleinanzeigenLoginScreen> {
           onPageStarted: (String url) {
             print('Page started loading: $url');
           },
-          onPageFinished: (String url) {
+          onPageFinished: (String url) async {
             print('Page finished loading: $url');
-            // Detect leaving login page (simple heuristic: not the login URL and contains '/m-' removed or user dashboard / posting page)
-            if (!url.contains('einloggen') && mounted) {
-              // Small delay to ensure user sees navigation
+            if (!mounted) return;
+            try {
+              // Prefer a direct cookie check inside the WebView — more reliable than URL heuristics.
+              final raw = await _controller.runJavaScriptReturningResult('document.cookie');
+              final cookieString = raw.toString();
+              // Some platforms return quoted strings like '"a=b"', so trim quotes
+              final cleaned = cookieString.replaceAll('"', '').trim();
+              if (cleaned.isNotEmpty) {
+                // Record detection but do NOT pop immediately. Some sites set cookies
+                // early during the login flow which would kick the user out.
+                _cookiesDetected = true;
+                debugPrint('Kleinanzeigen: cookies detected (will wait to leave login page before closing)');
+              }
+            } catch (e) {
+              // ignore JS failures and fall back to URL heuristic
+              debugPrint('Cookie check failed: $e');
+            }
+
+            // Only close the login screen when the URL leaves the login page AND cookies were detected.
+            if (!url.contains('einloggen') && _cookiesDetected && mounted) {
+              KleinanzeigenService.markHasCookies();
               Future.delayed(const Duration(milliseconds: 400), () {
                 if (mounted) Navigator.pop(context);
               });

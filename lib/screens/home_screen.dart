@@ -3,6 +3,7 @@ import '../services/api_key_manager.dart';
 import '../services/ads_service.dart';
 import 'camera_screen.dart';
 import 'api_key_settings_screen.dart';
+import 'shop_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -96,6 +97,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Shop',
+          icon: const Icon(Icons.shopping_cart),
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopScreen()));
+          },
+        ),
   title: GestureDetector(
           onLongPress: () async {
             final controller = TextEditingController();
@@ -138,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         backgroundColor: Colors.orange,
         centerTitle: true,
-        actions: [
+  actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _navigateToSettings,

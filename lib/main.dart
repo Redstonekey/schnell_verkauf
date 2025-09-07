@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/foundation.dart';
 import 'services/ads_service.dart';
+import 'screens/shop_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/onboarding_service.dart';
@@ -148,24 +149,56 @@ class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBinding
       valueListenable: AdsService.showAds,
       builder: (context, showAds, _) {
         Widget banner = const SizedBox.shrink();
-        if (showAds && _loaded && ad != null) {
-          banner = Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Divider(height: 1, thickness: 0.5),
-              SizedBox(
-                width: double.infinity,
-                height: ad.size.height.toDouble(),
-                child: Center(
-                  child: SizedBox(
-                    width: ad.size.width.toDouble(),
-                    height: ad.size.height.toDouble(),
-                    child: AdWidget(ad: ad),
+        if (showAds) {
+          if (_loaded && ad != null) {
+            banner = Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Divider(height: 1, thickness: 0.5),
+                SizedBox(
+                  width: double.infinity,
+                  height: ad.size.height.toDouble(),
+                  child: Center(
+                    child: SizedBox(
+                      width: ad.size.width.toDouble(),
+                      height: ad.size.height.toDouble(),
+                      child: AdWidget(ad: ad),
+                    ),
                   ),
                 ),
+              ],
+            );
+          } else {
+            // Fallback Eigenwerbung
+            banner = InkWell(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ShopScreen()),
+                );
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Divider(height: 1, thickness: 0.5),
+                  Container(
+                    color: Colors.black12,
+                    width: double.infinity,
+                    height: 50,
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      'assets/ads/fallback_banner.png',
+                      fit: BoxFit.contain,
+                      height: 50,
+                      errorBuilder: (_, __, ___) => const Text(
+                        'Eigene Werbung – Jetzt werbefrei werden',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          );
+            );
+          }
         }
         return Column(
           children: [

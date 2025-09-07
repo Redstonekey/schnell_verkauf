@@ -158,6 +158,7 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
   late final WebViewController _controller;
   bool _imagesInjected = false;
   bool _sessionChecked = false;
+  bool _successShown = false;
 
   @override
   void initState() {
@@ -187,15 +188,16 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
               _sessionChecked = true;
               _fillFormData();
             }
-              // Automatically navigate to Home if URL changes to something except the category change page
-                if (
-                !url.contains('kleinanzeigen.de/p-kategorie-aendern.html') &&
-                !url.contains('kleinanzeigen.de/p-anzeige-aufgeben-schritt2.html') &&
-                _sessionChecked &&
-                mounted
-                ) {
-                _showSuccessAndNavigateHome();
-                }
+            // Success detection: rely solely on reaching the confirmation URL.
+            if (!_successShown && url.contains('p-anzeige-aufgeben-bestaetigung.html')) {
+              _successShown = true;
+              if (mounted) {
+                // small delay to let page settle (optional)
+                Future.delayed(const Duration(milliseconds: 50), () {
+                  if (mounted) _showSuccessAndNavigateHome();
+                });
+              }
+            }
           },
         ),
       )

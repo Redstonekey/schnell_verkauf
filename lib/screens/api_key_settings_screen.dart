@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_key_manager.dart';
 import '../services/kleinanzeigen_service.dart';
 import '../services/ads_service.dart';
+import '../services/smart_pricing_settings.dart';
+import '../services/ads_agent_key_manager.dart';
 import 'package:flutter/services.dart';
 import 'package:advertising_id/advertising_id.dart';
 
@@ -20,6 +22,9 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   String? _familyCode; // stored code
   bool _loadingFamily = true;
   bool _hasKleinanzeigenCookies = false;
+  bool _smartPricing = false;
+  final TextEditingController _agentKeyController = TextEditingController();
+  bool _hasAgentKey = false;
 
   @override
   void initState() {
@@ -27,6 +32,8 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
     _loadApiKey();
     _loadFamilyCode();
     _loadKleinanzeigenCookieState();
+  _loadSmartPricing();
+  _loadAgentKey();
   }
 
   Future<void> _loadKleinanzeigenCookieState() async {
@@ -48,6 +55,49 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
         backgroundColor: ok ? Colors.green : Colors.red,
       ),
     );
+  }
+
+  Future<void> _loadSmartPricing() async {
+    final enabled = await SmartPricingSettings.isEnabled();
+    if (!mounted) return;
+    setState(() { _smartPricing = enabled; });
+  }
+
+  Future<void> _toggleSmartPricing(bool v) async {
+    await SmartPricingSettings.setEnabled(v);
+    if (!mounted) return;
+    setState(() { _smartPricing = v; });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Smart Pricing ${v ? 'aktiviert' : 'deaktiviert'}')),
+    );
+  }
+
+  Future<void> _loadAgentKey() async {
+    final key = await AdsAgentKeyManager.getKey();
+    if (!mounted) return;
+    setState(() {
+      _hasAgentKey = key != null && key.isNotEmpty;
+      if (key != null) _agentKeyController.text = key;
+    });
+  }
+
+  Future<void> _saveAgentKey() async {
+    final v = _agentKeyController.text.trim();
+    if (v.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agent API Key darf nicht leer sein'), backgroundColor: Colors.red));
+      return;
+    }
+    await AdsAgentKeyManager.saveKey(v);
+    await _loadAgentKey();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agent API Key gespeichert'), backgroundColor: Colors.green));
+  }
+
+  Future<void> _clearAgentKey() async {
+    await AdsAgentKeyManager.clearKey();
+    await _loadAgentKey();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Agent API Key gelöscht'), backgroundColor: Colors.orange));
   }
 
   Future<void> _showDebugInfo() async {
@@ -277,6 +327,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
   @override
   void dispose() {
     _apiKeyController.dispose();
+  _agentKeyController.dispose();
     super.dispose();
   }
 
@@ -429,6 +480,73 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
                   ),
                 ),
               ),
+            const SizedBox(height: 24),
+            // Smart Pricing toggle
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.trending_up, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('Smart Pricing', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Wenn aktiviert, analysiert die KI zusätzlich aktuelle Angebote und optimiert den Preis automatisch.'),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Smart Pricing aktivieren'),
+                      value: _smartPricing,
+                      onChanged: (v) => _toggleSmartPricing(v),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Kleinanzeigen Agent API Key
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: const [Icon(Icons.search, color: Colors.orange), SizedBox(width: 8), Text('Agent API-key', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+                    const SizedBox(height: 12),
+                    const Text('Für Marktpreis-Abgleich (Smart Pricing). \nErhalten sie den Key von kleinanzeigen-agent.de'),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _agentKeyController,
+                      decoration: const InputDecoration(labelText: 'API Key', border: OutlineInputBorder()),
+                      obscureText: true,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _saveAgentKey,
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
+                          child: const Text('Speichern'),
+                        ),
+                      ),
+                      if (_hasAgentKey) ...[
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _clearAgentKey,
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                          child: const Text('Löschen'),
+                        ),
+                      ]
+                    ])
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             // Family code section
             Card(

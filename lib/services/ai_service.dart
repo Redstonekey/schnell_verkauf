@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import '../models/product_data.dart';
 import 'api_key_manager.dart';
+import 'smart_pricing_settings.dart';
+import 'kleinanzeigen_agent_service.dart';
 class AIService {
   // Simple in-memory cache + guards to avoid accidental duplicate/rapid requests
   static final Map<String, ProductData> _cache = {};
@@ -54,8 +57,11 @@ class AIService {
         imageParts.add(DataPart('image/jpeg', bytes));
       }
 
-      // Prepare the prompt in German
-      String prompt = '''
+  final smartPricingEnabled = await SmartPricingSettings.isEnabled();
+  print('[AIService] Starting analysis. Smart pricing enabled: ' + smartPricingEnabled.toString());
+
+  // Prepare the prompt in German (extended when smart pricing enabled)
+  String prompt = '''
 Analysiere die Bilder eines Produkts und erstelle eine Kleinanzeige auf Deutsch. 
 Schaue dir die Bilder genau an und identifiziere das Produkt.''';
 
@@ -63,7 +69,25 @@ Schaue dir die Bilder genau an und identifiziere das Produkt.''';
         prompt += '\n\nZusätzliche Informationen vom Nutzer: $additionalInfo';
       }
 
-      prompt += '''
+      if (smartPricingEnabled) {
+        prompt += '''
+
+Erstelle:
+- Einen präzisen, aussagekräftigen Titel (max 65 Zeichen)
+- Eine detaillierte Beschreibung mit Zustand, Besonderheiten und wichtigen Details
+- Einen realistischen Marktpreis in Euro basierend auf dem erkennbaren Zustand
+- Eine Liste von 1 bis 3 kurzen deutschen Suchbegriffen (search_keywords), die ein Käufer bei Kleinanzeigen eingeben würde (ohne Anführungszeichen, Markennamen erlaubt, keine Sonderzeichen außer + & und Zahlen)
+
+Antworte NUR im folgenden JSON Format (kein anderer Text):
+{
+  "title": "Produkttitel hier",
+  "description": "Detaillierte Beschreibung des Produkts hier",
+  "price": 25.50,
+  "search_keywords": ["keyword1", "keyword2"]
+}
+''';
+      } else {
+        prompt += '''
 
 Erstelle:
 - Einen präzisen, aussagekräftigen Titel (max 65 Zeichen)
@@ -77,6 +101,7 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
   "price": 25.50
 }
 ''';
+      }
 
       // Create content with text and images
       final content = [
@@ -132,13 +157,49 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
       
       final jsonString = responseText.substring(jsonStart, jsonEnd);
       final productJson = jsonDecode(jsonString);
+  print('[AIService] Raw AI JSON: ' + productJson.toString());
 
-      final result = ProductData(
+      var result = ProductData(
         title: productJson['title']?.toString() ?? 'Unbekanntes Produkt',
         description: productJson['description']?.toString() ?? 'Keine Beschreibung verfügbar',
         price: _parsePrice(productJson['price']),
         imagePaths: imagePaths,
+        searchKeywords: smartPricingEnabled
+            ? (productJson['search_keywords'] is List
+                ? (productJson['search_keywords'] as List).map((e) => e.toString()).toList()
+                : productJson['search_keywords'] is String
+                    ? [productJson['search_keywords'].toString()]
+                    : <String>[])
+            : const [],
       );
+
+      // Smart pricing refinement: fetch competitor ad and adjust price
+      if (smartPricingEnabled && result.searchKeywords.isNotEmpty) {
+        try {
+          print('[AIService] Attempting market fetch with keywords: ' + result.searchKeywords.join(', '));
+          final competitor = await KleinanzeigenAgentService.fetchAdForKeywords(result.searchKeywords, fallbackTitle: result.title);
+          if (competitor != null) {
+            print('[AIService] Competitor ad fetched: title="${competitor.title}" price=${competitor.price}');
+            final refinedPrice = await _refinePrice(
+              originalTitle: result.title,
+              originalDescription: result.description,
+              originalPrice: result.price,
+              competitorTitle: competitor.title,
+              competitorDescription: competitor.description,
+              competitorPrice: competitor.price,
+              geminiModel: model,
+            );
+            if (refinedPrice != null && refinedPrice > 0) {
+              print('[AIService] Refined price accepted: ' + refinedPrice.toString());
+              result = result.copyWith(price: refinedPrice);
+            }
+          } else {
+            print('[AIService] No competitor ad found for any provided keyword/title variants.');
+          }
+        } catch (e) {
+          print('Smart pricing refinement failed: $e');
+        }
+      }
 
       // Cache a successful result
       try {
@@ -170,6 +231,44 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
     return 0.0;
   }
 
+  /// Second stage price refinement using Gemini with competitor data
+  static Future<double?> _refinePrice({
+    required String originalTitle,
+    required String originalDescription,
+    required double originalPrice,
+    required String competitorTitle,
+    required String competitorDescription,
+    required double competitorPrice,
+    required GenerativeModel geminiModel,
+  }) async {
+    final prompt = '''
+Du bist ein Preisoptimierer für Kleinanzeigen. 
+Original Anzeige:
+Titel: $originalTitle
+Beschreibung: $originalDescription
+Preis: ${originalPrice.toStringAsFixed(2)} EUR
+
+Konkurrenz Anzeige:
+Titel: $competitorTitle
+Beschreibung: $competitorDescription
+Preis: ${competitorPrice.toStringAsFixed(2)} EUR
+
+Gib eine EINZIGE Zahl als neuen optimierten Preis in Euro aus (ohne Währungssymbol, ohne Text, Dezimalpunkt falls nötig). Der Preis soll helfen schneller zu verkaufen und realistisch sein. Runde auf ganze Euro oder 0.50 Schritte.
+''';
+    try {
+      final resp = await geminiModel.generateContent([Content.text(prompt)]);
+      final text = resp.text?.trim() ?? '';
+      final match = RegExp(r"(\d+[.,]?\d*)").firstMatch(text);
+      if (match != null) {
+        final val = match.group(1)!.replaceAll(',', '.');
+        return double.tryParse(val);
+      }
+    } catch (e) {
+      print('Refine price AI error: $e');
+    }
+    return null;
+  }
+
   // Demo response for testing without actual AI service
   static ProductData _createDemoResponse(List<String> imagePaths) {
     return ProductData(
@@ -178,6 +277,7 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
           'If you still see this message, please reach out to error@joancode.33mail.com',
       price: 0.0,
       imagePaths: [],
+      searchKeywords: const [],
     );
   }
 }

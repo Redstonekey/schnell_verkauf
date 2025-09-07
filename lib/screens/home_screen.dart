@@ -238,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
             
             // Subtitle
             const Text(
-              'Verkaufe deine Produkte schnell und einfach',
+              'Verkaufe deine Produkte schnell und einfach auf Kleinanzeigen mit Hilfe von KI',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey,

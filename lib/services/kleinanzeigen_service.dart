@@ -36,7 +36,6 @@ class KleinanzeigenService {
       final sp = await SharedPreferences.getInstance();
       await sp.setBool(_prefsKey, v);
     } catch (e) {
-      debugPrint('Failed to set kleinanzeigen cookie flag: $e');
     }
   }
 
@@ -48,7 +47,6 @@ class KleinanzeigenService {
       final sp = await SharedPreferences.getInstance();
       return sp.getBool(_prefsKey) ?? false;
     } catch (e) {
-      debugPrint('Failed to read kleinanzeigen cookie flag: $e');
       return false;
     }
   }
@@ -60,7 +58,6 @@ class KleinanzeigenService {
       await _setHasCookies(false);
       return cleared;
     } catch (e) {
-      debugPrint('Error clearing cookies: $e');
       await _setHasCookies(false);
       return false;
     }
@@ -86,10 +83,8 @@ class _KleinanzeigenLoginScreenState extends State<KleinanzeigenLoginScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            print('Page started loading: $url');
           },
           onPageFinished: (String url) async {
-            print('Page finished loading: $url');
             if (!mounted) return;
             try {
               // Prefer a direct cookie check inside the WebView — more reliable than URL heuristics.
@@ -101,11 +96,9 @@ class _KleinanzeigenLoginScreenState extends State<KleinanzeigenLoginScreen> {
                 // Record detection but do NOT pop immediately. Some sites set cookies
                 // early during the login flow which would kick the user out.
                 _cookiesDetected = true;
-                debugPrint('Kleinanzeigen: cookies detected (will wait to leave login page before closing)');
               }
             } catch (e) {
               // ignore JS failures and fall back to URL heuristic
-              debugPrint('Cookie check failed: $e');
             }
 
             // Only close the login screen when the URL leaves the login page AND cookies were detected.
@@ -117,7 +110,6 @@ class _KleinanzeigenLoginScreenState extends State<KleinanzeigenLoginScreen> {
             }
           },
           onWebResourceError: (WebResourceError error) {
-            print('Web resource error: ${error.description}');
           },
         ),
       )
@@ -300,7 +292,6 @@ class _KleinanzeigenPostAdScreenState extends State<KleinanzeigenPostAdScreen> {
         await _controller.runJavaScript(js);
         await Future.delayed(const Duration(milliseconds: 400));
       } catch (e) {
-        debugPrint('Bild-Injektion fehlgeschlagen für $path: $e');
       }
     }
 

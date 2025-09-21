@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:http/http.dart' as http;
 import '../models/product_data.dart';
 import 'api_key_manager.dart';
 import 'smart_pricing_settings.dart';
@@ -58,7 +57,6 @@ class AIService {
       }
 
   final smartPricingEnabled = await SmartPricingSettings.isEnabled();
-  print('[AIService] Starting analysis. Smart pricing enabled: ' + smartPricingEnabled.toString());
 
   // Prepare the prompt in German (extended when smart pricing enabled)
   String prompt = '''
@@ -157,7 +155,6 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
       
       final jsonString = responseText.substring(jsonStart, jsonEnd);
       final productJson = jsonDecode(jsonString);
-  print('[AIService] Raw AI JSON: ' + productJson.toString());
 
       var result = ProductData(
         title: productJson['title']?.toString() ?? 'Unbekanntes Produkt',
@@ -176,10 +173,8 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
       // Smart pricing refinement: fetch competitor ad and adjust price
       if (smartPricingEnabled && result.searchKeywords.isNotEmpty) {
         try {
-          print('[AIService] Attempting market fetch with keywords: ' + result.searchKeywords.join(', '));
           final competitor = await KleinanzeigenAgentService.fetchAdForKeywords(result.searchKeywords, fallbackTitle: result.title);
           if (competitor != null) {
-            print('[AIService] Competitor ad fetched: title="${competitor.title}" price=${competitor.price}');
             final refinedPrice = await _refinePrice(
               originalTitle: result.title,
               originalDescription: result.description,
@@ -190,14 +185,11 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
               geminiModel: model,
             );
             if (refinedPrice != null && refinedPrice > 0) {
-              print('[AIService] Refined price accepted: ' + refinedPrice.toString());
               result = result.copyWith(price: refinedPrice);
             }
           } else {
-            print('[AIService] No competitor ad found for any provided keyword/title variants.');
           }
         } catch (e) {
-          print('Smart pricing refinement failed: $e');
         }
       }
 
@@ -208,12 +200,6 @@ Antworte NUR im folgenden JSON Format (kein anderer Text):
 
       return result;
     } catch (e) {
-      final msg = e.toString();
-      if (msg.toLowerCase().contains('quota') || msg.contains('Generate Content') || msg.contains('429') || msg.toLowerCase().contains('too many requests')) {
-        print('AI Service Rate/Quota Error: $e');
-      } else {
-        print('AI Service Error: $e');
-      }
       // Fallback for demo/testing purposes
       return _createDemoResponse(imagePaths);
     } finally {
@@ -264,7 +250,6 @@ Gib eine EINZIGE Zahl als neuen optimierten Preis in Euro aus (ohne Währungssym
         return double.tryParse(val);
       }
     } catch (e) {
-      print('Refine price AI error: $e');
     }
     return null;
   }

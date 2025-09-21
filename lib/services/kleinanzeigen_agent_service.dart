@@ -28,7 +28,6 @@ class KleinanzeigenAgentService {
   static Future<KleinanzeigenAgentAd?> fetchFirstAd(String keyword) async {
     if (keyword.trim().isEmpty) return null;
     if (_authFailed) {
-      print('[KleinanzeigenAgentService] Skipping fetch (auth previously failed).');
       return null;
     }
     try {
@@ -51,28 +50,13 @@ class KleinanzeigenAgentService {
           if (apiKey != null && apiKey!.isNotEmpty) 'ads_key': apiKey!,
         };
         try {
-          // Debug print
-          // ignore: avoid_print
-          print('[KleinanzeigenAgentService] GET ' + url.toString());
-          if (apiKey != null) {
-            final safe = apiKey!.length > 10 ? apiKey!.substring(0,6) + '...' + apiKey!.substring(apiKey!.length - 4) : apiKey!;
-            print('[KleinanzeigenAgentService] Using ads_key (masked): ' + safe + ' length=' + apiKey!.length.toString());
-          } else {
-            print('[KleinanzeigenAgentService] No ads_key set');
-          }
           final resp = await http.get(url, headers: headers).timeout(const Duration(seconds: 12));
-          // ignore: avoid_print
-          print('[KleinanzeigenAgentService] Status: ${resp.statusCode} len=${resp.body.length}');
           if (resp.statusCode != 200) {
-            // ignore: avoid_print
-            print('[KleinanzeigenAgentService] Non-200 response body: ${resp.body}');
             if (resp.statusCode == 401) {
-              print('[KleinanzeigenAgentService] API key rejected (401). Aborting further attempts.');
               _authFailed = true;
               return null; // stop trying more queries
             }
             if (resp.statusCode == 429) {
-              print('[KleinanzeigenAgentService] Rate limit hit (429). Aborting further attempts.');
               return null;
             }
             continue;
@@ -80,8 +64,6 @@ class KleinanzeigenAgentService {
           final json = jsonDecode(resp.body);
           final data = json['data'];
           if (data == null || data['ads'] is! List || data['ads'].isEmpty) {
-            // ignore: avoid_print
-            print('[KleinanzeigenAgentService] Empty ads array for params: ' + params.toString());
             continue; // try next attempt
           }
           final ad = data['ads'][0];
@@ -92,15 +74,11 @@ class KleinanzeigenAgentService {
             price: _parsePrice(ad['price']),
           );
         } catch (e) {
-          // ignore: avoid_print
-          print('[KleinanzeigenAgentService] Attempt failed: $e params=$params');
           continue;
         }
       }
       return null;
     } catch (e) {
-      // ignore: avoid_print
-      print('[KleinanzeigenAgentService] fetchFirstAd outer error: $e');
       return null;
     }
   }

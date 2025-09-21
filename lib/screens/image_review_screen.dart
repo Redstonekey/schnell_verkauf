@@ -274,7 +274,6 @@ class _CropScreenState extends State<_CropScreen> {
         _rotationCount = (_rotationCount + quarterTurns) % 4;
       });
     } catch (e) {
-      print('Error rotating image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

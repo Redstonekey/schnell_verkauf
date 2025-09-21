@@ -26,6 +26,7 @@ class _AdditionalInfoScreenState extends State<AdditionalInfoScreen> {
   final List<String> _presets = [
     'Funktionsfähig',
     'Neuwertig',
+    'Ungeöffnet',
     'Sehr guter Zustand',
     'Guter Zustand',
     'Gebraucht',

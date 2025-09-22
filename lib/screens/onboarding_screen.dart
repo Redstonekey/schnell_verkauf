@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../services/onboarding_service.dart';
 import '../services/api_key_manager.dart';
 import '../services/kleinanzeigen_service.dart';
+import '../services/ads_service.dart';
 import 'home_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -36,10 +37,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   // Start a slight delayed animation for nicer feel
   Future.delayed(const Duration(milliseconds: 120), () { if (mounted) _anim.forward(); });
     _loadKey();
+    // Temporarily suspend global banners while onboarding is active
+    AdsService.suspendAds.value = true;
   }
 
   @override
   void dispose() {
+    // Restore ad visibility when leaving onboarding
+    AdsService.suspendAds.value = false;
     _pageController.dispose();
     _anim.dispose();
     _apiKeyController.dispose();
@@ -107,6 +112,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
     // Finish after all gating conditions satisfied
     if (_index == 2 && _loggedIn && _hasKey) {
       await OnboardingService.setCompleted();
+      // Onboarding finished: re-enable banners according to AdsService logic
+      AdsService.suspendAds.value = false;
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),

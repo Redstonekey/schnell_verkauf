@@ -151,8 +151,14 @@ class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBinding
     return ValueListenableBuilder<bool>(
       valueListenable: AdsService.showAds,
       builder: (context, showAds, _) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: AdsService.suspendAds,
+          builder: (context, suspended, __) {
         Widget banner = const SizedBox.shrink();
-        if (showAds) {
+            // If suspended (e.g. onboarding) we never show banners here.
+            if (suspended) {
+              banner = const SizedBox.shrink();
+            } else if (showAds) {
           if (_loaded && ad != null) {
             banner = Column(
               mainAxisSize: MainAxisSize.min,
@@ -211,6 +217,8 @@ class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBinding
               child: banner,
             ),
           ],
+        );
+          },
         );
       },
     );

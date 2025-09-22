@@ -32,6 +32,10 @@ class AdsService {
   static final ValueNotifier<bool> showAds = ValueNotifier<bool>(true);
   static final ValueNotifier<String?> activeCode = ValueNotifier<String?>(null);
   static final ValueNotifier<Duration?> remaining = ValueNotifier<Duration?>(null);
+  /// When true the app should temporarily not show any ads (useful for
+  /// onboarding or other interruption flows). This is local-only and does
+  /// not affect remote flags.
+  static final ValueNotifier<bool> suspendAds = ValueNotifier<bool>(false);
 
   static bool _initialized = false;
 

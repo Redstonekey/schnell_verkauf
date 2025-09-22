@@ -44,7 +44,7 @@ Du kannst:
 Änderungen an dieser Policy werden in diesem Dokument aktualisiert.
 
 ## 10. Kontakt
-Bitte ergänzen: <PLEASE_ADD_EMAIL> für Auskunftsanfragen.
+privacy@joancode.33mail.com für Auskunftsanfragen.
 
 ---
 EN (Summary)

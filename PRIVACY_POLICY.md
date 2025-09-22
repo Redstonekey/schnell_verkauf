@@ -1,11 +1,11 @@
 # Datenschutz / Privacy Policy
 
-Letzte Aktualisierung: 2025-08-20
+Letzte Aktualisierung: 22-09-2025
 
 Diese App ("Schnell Verkaufen") hilft dir beim Erstellen von Kleinanzeigen durch KI-gestützte Analyse deiner Produktfotos.
 
 ## 1. Verantwortlicher
-Verantwortlich für die Datenverarbeitung ist der Betreiber dieser App. Kontakt: <PLEASE_ADD_EMAIL>
+Verantwortlich für die Datenverarbeitung ist der Betreiber dieser App. Kontakt: privacy@joancode.33mail.com
 
 ## 2. Verarbeitete Daten
 | Kategorie | Beschreibung | Speicherort | Weitergabe |

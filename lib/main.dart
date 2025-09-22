@@ -33,6 +33,9 @@ void main() async {
   ]);
   
   final completed = await OnboardingService.isCompleted();
+  // If onboarding has not been completed, suspend ads from the very start so
+  // the GlobalBannerHost doesn't load or display banners on the welcome flow.
+  AdsService.suspendAds.value = !completed;
   runApp(SchnellVerkaufApp(onboardingCompleted: completed));
 }
 

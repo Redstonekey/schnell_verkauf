@@ -94,6 +94,7 @@ flutter:
   assets:
     # Fallback Banner (320x50 empfohlen) – ersetze die Datei durch dein eigenes PNG
     - assets/ads/fallback_banner.png
+    - assets/logo/logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

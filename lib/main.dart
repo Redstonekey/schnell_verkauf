@@ -9,6 +9,8 @@ import 'services/onboarding_service.dart';
 import 'services/camera_service.dart';
 import 'services/api_key_manager.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Initialize Google Mobile Ads SDK
@@ -43,6 +45,7 @@ class SchnellVerkaufApp extends StatelessWidget {
     return MaterialApp(
   title: 'Schnell Verkaufen',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.orange,
@@ -170,34 +173,32 @@ class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBinding
             );
           } else {
             // Fallback Eigenwerbung
-            banner = Material(
-              child: InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ShopScreen()),
-                  );
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Divider(height: 1, thickness: 0.5),
-                    Container(
-                      color: Colors.black12,
-                      width: double.infinity,
+            banner = GestureDetector(
+              onTap: () {
+                navigatorKey.currentState!.push(
+                  MaterialPageRoute(builder: (_) => const ShopScreen()),
+                );
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Divider(height: 1, thickness: 0.5),
+                  Container(
+                    color: Colors.black12,
+                    width: double.infinity,
+                    height: 50,
+                    alignment: Alignment.center,
+                    child: Image.asset(
+                      'assets/ads/fallback_banner.png',
+                      fit: BoxFit.contain,
                       height: 50,
-                      alignment: Alignment.center,
-                      child: Image.asset(
-                        'assets/ads/fallback_banner.png',
-                        fit: BoxFit.contain,
-                        height: 50,
-                        errorBuilder: (_, __, ___) => const Text(
-                          'Eigene Werbung – Jetzt werbefrei werden',
-                          style: TextStyle(fontSize: 12),
-                        ),
+                      errorBuilder: (_, __, ___) => const Text(
+                        'Eigene Werbung – Jetzt werbefrei werden',
+                        style: TextStyle(fontSize: 12),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             );
           }

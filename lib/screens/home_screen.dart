@@ -217,10 +217,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: _hasApiKey ? Colors.orange : Colors.grey,
                 borderRadius: BorderRadius.circular(60),
               ),
-              child: Icon(
-                Icons.camera_alt,
-                size: 60,
-                color: Colors.white,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(60),
+                child: Image.asset(
+                  'assets/logo/logo.png',
+                  fit: BoxFit.cover,
+                  width: 120,
+                  height: 120,
+                ),
               ),
             ),
             const SizedBox(height: 32),

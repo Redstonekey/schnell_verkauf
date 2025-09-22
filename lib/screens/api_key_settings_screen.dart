@@ -6,6 +6,7 @@ import '../services/smart_pricing_settings.dart';
 import '../services/ads_agent_key_manager.dart';
 import 'package:flutter/services.dart';
 import 'package:advertising_id/advertising_id.dart';
+import 'privacy_policy_screen.dart';
 
 class ApiKeySettingsScreen extends StatefulWidget {
   const ApiKeySettingsScreen({super.key});
@@ -712,10 +713,25 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: _showDebugInfo,
-                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                        child: const Text('Debug Informationen anzeigen'),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          OutlinedButton(
+                            onPressed: _showDebugInfo,
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                            child: const Text('Debug Informationen anzeigen'),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (c) => const PrivacyPolicyScreen()),
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                            child: const Text('Datenschutz / Privacy Policy anzeigen'),
+                          ),
+                        ],
                       ),
                     ),
                   ],

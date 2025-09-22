@@ -110,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
             await showDialog(
               context: context,
               builder: (c) => AlertDialog(
-                title: const Text('Familien Code eingeben'),
+                title: const Text('Premium Code eingeben'),
                 content: TextField(
                   controller: controller,
                   decoration: const InputDecoration(hintText: 'Code oder leer zum Löschen'),

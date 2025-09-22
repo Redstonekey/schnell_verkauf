@@ -170,32 +170,34 @@ class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBinding
             );
           } else {
             // Fallback Eigenwerbung
-            banner = InkWell(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const ShopScreen()),
-                );
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Divider(height: 1, thickness: 0.5),
-                  Container(
-                    color: Colors.black12,
-                    width: double.infinity,
-                    height: 50,
-                    alignment: Alignment.center,
-                    child: Image.asset(
-                      'assets/ads/fallback_banner.png',
-                      fit: BoxFit.contain,
+            banner = Material(
+              child: InkWell(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ShopScreen()),
+                  );
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Divider(height: 1, thickness: 0.5),
+                    Container(
+                      color: Colors.black12,
+                      width: double.infinity,
                       height: 50,
-                      errorBuilder: (_, __, ___) => const Text(
-                        'Eigene Werbung – Jetzt werbefrei werden',
-                        style: TextStyle(fontSize: 12),
+                      alignment: Alignment.center,
+                      child: Image.asset(
+                        'assets/ads/fallback_banner.png',
+                        fit: BoxFit.contain,
+                        height: 50,
+                        errorBuilder: (_, __, ___) => const Text(
+                          'Eigene Werbung – Jetzt werbefrei werden',
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           }
@@ -203,7 +205,10 @@ class _GlobalBannerHostState extends State<GlobalBannerHost> with WidgetsBinding
         return Column(
           children: [
             Expanded(child: widget.child),
-            banner,
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 100),
+              child: banner,
+            ),
           ],
         );
       },

@@ -160,7 +160,7 @@ class _ApiKeySettingsScreenState extends State<ApiKeySettingsScreen> {
     final newCode = await showDialog<String?>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Familien Code'),
+        title: const Text('Premium Code'),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(

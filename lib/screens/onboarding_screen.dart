@@ -24,7 +24,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   bool _checkingKey = true;
   bool _hasKey = false;
   bool _loggedIn = false; // Kleinanzeigen Login Status
-  bool _obscureApiKey = true;
+  // Show API key by default (not a password field) so users can paste easily
+  bool _obscureApiKey = false;
   bool _savingApiKey = false;
 
   @override
@@ -514,6 +515,10 @@ class _ApiKeyPage extends StatelessWidget {
                 TextField(
                   controller: apiKeyController,
                   obscureText: obscureApiKey,
+                  keyboardType: TextInputType.text,
+                  enableSuggestions: true,
+                  autocorrect: false,
+                  enableInteractiveSelection: true,
                   decoration: InputDecoration(
                     hintText: 'Füge hier deinen Gemini API Key ein',
                     border: const OutlineInputBorder(),
